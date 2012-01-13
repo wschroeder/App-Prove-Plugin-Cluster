@@ -1,1 +1,1 @@
-prove -PP --host linus231 -r t/
+prove -PRemoteHosts --host linus231 -r t/

@@ -1,4 +1,4 @@
-package App::Prove::Plugin::P;
+package App::Prove::Plugin::RemoteHosts;
 use strict;
 use warnings;
 use Getopt::Long;
