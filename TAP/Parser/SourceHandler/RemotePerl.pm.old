@@ -1,0 +1,130 @@
+package TAP::Parser::SourceHandler::RemotePerl;
+use strict;
+use vars qw($VERSION @ISA);
+use Scalar::Util qw(blessed);
+use Getopt::Long;
+use TAP::Parser::IteratorFactory;
+use TAP::Parser::Iterator::Process;
+use TAP::Parser::SourceHandler;
+@ISA = 'TAP::Parser::SourceHandler::Perl';
+
+our $REMOTE_CALL = 'ssh';
+
+TAP::Parser::IteratorFactory->register_handler( __PACKAGE__ );
+
+sub host {
+    my ($self, $host) = @_;
+    if ($host) {
+        $self->{host} = $host;
+    }
+    return $self->{host};
+}
+
+sub can_handle {
+    my ($class, $source) = @_;
+    my $data = $source->raw;
+    return (
+        defined($data) &&
+        ref $data &&
+        ref $data eq 'HASH' &&
+        defined($data->{test})
+    ) ? 1 : undef;
+}
+
+sub make_iterator {
+    my ($class, $source) = @_;
+
+    # Whitelist the parameters we will allow to pass through
+    my @original_args = @ARGV;
+    local @ARGV = @original_args;
+    Getopt::Long::Configure(qw(no_ignore_case bundling pass_through));
+
+    my $parameter_bag = {
+        sources  => [],
+        includes => [],
+        modules  => [],
+        plugins  => [],
+    };
+
+    my %whitelisted_options = (
+        'f|failures'   => \$parameter_bag->{failures},
+        'o|comments'   => \$parameter_bag->{comments},
+        'l|lib'        => \$parameter_bag->{lib},
+        'b|blib'       => \$parameter_bag->{blib},
+        'harness=s'    => \$parameter_bag->{harness},
+        'ignore-exit'  => \$parameter_bag->{ignore_exit},
+        'source=s@'    => $parameter_bag->{sources},
+        'formatter=s'  => \$parameter_bag->{formatter},
+        'p|parse'      => \$parameter_bag->{parse},
+        'q|quiet'      => \$parameter_bag->{quiet},
+        'Q|QUIET'      => \$parameter_bag->{really_quiet},
+        'e|exec=s'     => \$parameter_bag->{exec},
+        'm|merge'      => \$parameter_bag->{merge},
+        'I=s@'         => $parameter_bag->{includes},
+        'M=s@'         => $parameter_bag->{modules},
+        'P=s@'         => $parameter_bag->{plugins},
+        'directives'   => \$parameter_bag->{directives},
+        'T'            => \$parameter_bag->{taint_fail},
+        't'            => \$parameter_bag->{taint_warn},
+        'W'            => \$parameter_bag->{warnings_fail},
+        'w'            => \$parameter_bag->{warnings_warn},
+        'normalize'    => \$parameter_bag->{normalize},
+        'tapversion=s' => \$parameter_bag->{tapversion},
+        'trap'         => \$parameter_bag->{trap},
+    );
+
+    GetOptions(
+        %whitelisted_options
+    ) or croak('Unable to parse parameters');
+
+    # Convert $parameter_bag to the list of commandline options to pass
+    my @parameters_to_pass = '--verbose', map {
+        my $option_key  = $_;
+        my $param_value = $whitelisted_options{$option_key};
+        my $param_type  = $option_key =~ /=s$/  ? 'string'       :
+                          $option_key =~ /=s@$/ ? 'string array' :
+                                                  'boolean';
+        my $param_name = $option_key;
+        $param_name =~ s/^.*\|//;
+        $param_name =~ s/=.*$//;
+        $param_name = ((length($param_name) == 1) ? '-' : '--') . $param_name;
+
+        if ($param_type eq 'string') {
+            defined($$param_value) ? ($param_name, $$param_value) : ()
+        }
+        elsif ($param_type eq 'boolean') {
+            $$param_value ? ($param_name) : ()
+        }
+        elsif ($param_type eq 'string array') {
+            my @values = @$param_value;
+            if (scalar(@values)) {
+                (map {($param_name, $_)} @values)
+            }
+            else {
+                ()
+            }
+        }
+        else {
+            die "Programmer error: did not handle param_type $param_type";
+        }
+    } keys %whitelisted_options;
+
+    my $server_command = 'cd ' . $ENV{PWD} . " && $^X $0 " . join(' ', @parameters_to_pass) . ' ' . $source->raw->{test};
+
+    print STDERR "\$server_command = $server_command\n";
+
+    my $command = [
+        split(/ /, $REMOTE_CALL),
+        $source->raw->{host},
+        $server_command
+    ];
+
+    return TAP::Parser::Iterator::Process->new({
+        command  => $command,
+        merge    => $source->merge,
+    });
+}
+
+1;
+
+__END__
