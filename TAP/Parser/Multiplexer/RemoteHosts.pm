@@ -11,7 +11,7 @@ our $ALL_HOSTS = [];
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    $self->initialize_hosts();
+    $self->initialize_hosts(@args);
     return $self;
 }
 
@@ -21,6 +21,14 @@ sub hosts {
         $self->{hosts} = $hosts;
     }
     return @{$self->{hosts}};
+}
+
+sub add_hosts {
+    my ($self, @hosts) = @_;
+    push @$ALL_HOSTS, @hosts;
+    $self->hosts(
+        [$self->hosts, @hosts]
+    );
 }
 
 sub reserve_host {
@@ -38,8 +46,8 @@ sub release_host {
 }
 
 sub initialize_hosts {
-    my $self = shift;
-    $self->hosts($ALL_HOSTS);
+    my ($self, %args) = @_;
+    $self->hosts($args{hosts} ? $args{hosts} : $ALL_HOSTS);
 }
 
 sub first_free_host {
