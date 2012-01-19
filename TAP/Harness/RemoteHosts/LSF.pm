@@ -38,6 +38,7 @@ sub aggregate_tests {
     # of the tests, effectively reserving it.
 
     # First spawn all the bsubs in parallel
+    print '# bsubbing';
     my @bsub_command   = (qw(bsub -q interactive -R), 'rusage[port3000=1,port4444=1]', qw(-Is /bin/bash));
     my $bsub_error;
     my @bsub_processes = map {
@@ -57,8 +58,10 @@ sub aggregate_tests {
             $bsub_error = $@;
         }
 
+        print '.';
         $bsub_process;
     } (1 .. $self->jobs);
+    print "\n";
 
     if ($bsub_error) {
         for (@bsub_processes) { kill 9, $_->{pid}; }
@@ -74,6 +77,9 @@ sub aggregate_tests {
         if (!$bsub_process->{host_name}) {
             for (@bsub_processes) { kill 9, $_->{pid}; }
             die "Unable to connect to an LSF host";
+        }
+        else {
+            print '# Reserved ' . $bsub_process->{host_name} . "\n";
         }
     }
     $TAP::Parser::Multiplexer::RemoteHosts::ALL_HOSTS = [map {$_->{host_name}} @bsub_processes];
