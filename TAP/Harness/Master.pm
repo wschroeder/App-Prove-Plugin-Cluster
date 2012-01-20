@@ -73,7 +73,7 @@ sub start_listening_for_slaves {
         ReuseAddr => 1,
         Timeout   => 0,
         Blocking  => 0
-    );
+    ) || die "Unable to create server";
 }
 
 sub detect_new_slaves {

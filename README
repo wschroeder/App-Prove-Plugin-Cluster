@@ -1,1 +1,1 @@
-prove -v -PCluster -r t/
+prove -v -PCluster -r t/fake_t
