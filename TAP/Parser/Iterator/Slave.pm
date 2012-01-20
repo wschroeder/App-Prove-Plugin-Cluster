@@ -43,8 +43,7 @@ sub next_raw {
     my $response = $self->{socket}->getline;
 
     if (!$response) {
-        $self->{exit} = 1;
-        return;
+        return \undef;
     }
 
     chomp($response);

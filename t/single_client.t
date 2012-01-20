@@ -68,7 +68,9 @@ for my $prove_command (@prove_commands) {
         };
 }, "Received test message for $test_number-test.t");
 
+            $socket->print("random junk\n");
             $socket->print("ok - Sample test\n");
+            $socket->print("# more random junk\n");
             $socket->print("1..1\n");
         }
 

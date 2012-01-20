@@ -97,6 +97,7 @@ sub detect_new_slaves {
 
             # Only connections with the right credentials are accepted
             if ($credentials eq $self->{credentials}) {
+                $connection->blocking(0);
                 push @new_connections, $connection;
             }
         }
@@ -153,8 +154,10 @@ sub aggregate_tests {
         if ( my ( $parser, $stash, $result ) = $mux->next ) {
             my ( $session, $job ) = @$stash;
             if ( defined $result ) {
-                $session->result($result);
-                $self->_bailout($result) if $result->is_bailout;
+                if (!(ref $result->raw && ${$result->raw} == undef)) {
+                    $session->result($result);
+                    $self->_bailout($result) if $result->is_bailout;
+                }
             }
             else {
                 # End of parser. Automatically removed from the mux.
