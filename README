@@ -1,1 +1,1 @@
-prove -PRemoteHosts --host linus231 -r t/
+prove -v -PCluster -r t/
