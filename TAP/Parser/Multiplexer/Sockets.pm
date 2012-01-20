@@ -64,10 +64,11 @@ sub add {
 
 sub next {
     my $self = shift;
-    my @results = $self->SUPER::next(@_);
-    my ($parser) = @results;
-    $self->release_socket($parser->{socket});
-    return @results;
+    my ($parser, $stash, $result) = $self->SUPER::next(@_);
+    if (!defined($result)) {
+        $self->release_socket($parser->{socket});
+    }
+    return ($parser, $stash, $result);
 }
 
 1;
