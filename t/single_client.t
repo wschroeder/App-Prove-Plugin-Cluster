@@ -22,69 +22,80 @@ sub get_message {
     return join('', @lines);
 }
 
-my $prove_stdout = IO::Handle->new;
-my $prove_stderr = IO::Handle->new;
-my $prove_pid    = open3(undef, $prove_stdout, $prove_stderr, qw(prove -v -PCluster -r t/fake_t/));
+my @prove_commands = (
+    [qw(prove -v -PCluster -r t/fake_t/)],
+    [qw(prove -v -PCluster --jobs 3 -r t/fake_t/)],
+);
+my $finished_rounds = 0;
 
-try {
-    my $credentials = $prove_stderr->getline;
-    chomp($credentials);
-    $credentials =~ s/TEST: //;
+for my $prove_command (@prove_commands) {
+    my $prove_stdout = IO::Handle->new;
+    my $prove_stderr = IO::Handle->new;
+    my $prove_pid    = open3(undef, $prove_stdout, $prove_stderr, @$prove_command);
 
-    like($credentials, qr{^cookie - \d+$}, 'validated credentials');
+    try {
+        my $credentials = $prove_stderr->getline;
+        chomp($credentials);
+        $credentials =~ s/TEST: //;
 
-    my $socket;
-    my $timeout = time + 3000;
+        like($credentials, qr{^cookie - \d+$}, 'validated credentials');
 
-    while (!$socket && time < $timeout) {
-        $socket = IO::Socket::INET->new(
-            PeerAddr => 'localhost',
-            PeerPort => 12012,
-            Proto    => 'tcp',
-        );
-        if (!$socket) {
-            sleep(0.5);
+        my $socket;
+        my $timeout = time + 3000;
+
+        while (!$socket && time < $timeout) {
+            $socket = IO::Socket::INET->new(
+                PeerAddr => 'localhost',
+                PeerPort => 12012,
+                Proto    => 'tcp',
+            );
+            if (!$socket) {
+                sleep(0.5);
+            }
         }
-    }
-    ok($socket, 'Able to connect to server');
+        ok($socket, 'Able to connect to server');
 
-    for my $test_number (1..10) {
-        if ($test_number < 10) {
-            $test_number = '0' . $test_number;
-        }
+        for my $test_number (1..10) {
+            if ($test_number < 10) {
+                $test_number = '0' . $test_number;
+            }
 
-        $socket->print("$credentials\n");
+            $socket->print("$credentials\n");
 
-        is(get_message($socket), qq{\$test = {
+            is(get_message($socket), qq{\$test = {
           'source' => 't/fake_t/$test_number-test.t',
           'switches' => []
         };
 }, "Received test message for $test_number-test.t");
 
-        $socket->print("ok - Sample test\n");
-        $socket->print("1..1\n");
+            $socket->print("ok - Sample test\n");
+            $socket->print("1..1\n");
+        }
+
+        $socket->print("$credentials\n");
+
+        my @prove_results = $prove_stdout->getlines;
+        my $last_line = pop @prove_results;
+        is($last_line, "Result: PASS\n", 'All tests passed');
+
+        my $wait_result = waitpid($prove_pid, 0);
+        my $status = $?;
+        is($wait_result, $prove_pid, 'prove finished on its own');
+        is($status, 0, 'prove was successful');
+
+        is(scalar(IO::Select->new($socket)->can_read), 1, 'A closed socket is readable');
+        my $throwaway_buffer;
+        is($socket->sysread($throwaway_buffer, 1000), 0, 'A socket properly closed by the server returns 0 bytes');
+
+        $finished_rounds++;
     }
-
-    $socket->print("$credentials\n");
-
-    my @prove_results = $prove_stdout->getlines;
-    my $last_line = pop @prove_results;
-    is($last_line, "Result: PASS\n", 'All tests passed');
-
-    my $wait_result = waitpid($prove_pid, 0);
-    my $status = $?;
-    is($wait_result, $prove_pid, 'prove finished on its own');
-    is($status, 0, 'prove was successful');
-
-    is(scalar(IO::Select->new($socket)->can_read), 1, 'A closed socket is readable');
-    my $throwaway_buffer;
-    is($socket->sysread($throwaway_buffer, 1000), 0, 'A socket properly closed by the server returns 0 bytes');
-
-    done_testing;
+    catch {
+        kill 9, $prove_pid;
+        waitpid $prove_pid, 0;
+        print STDERR shift;
+    };
 }
-catch {
-    kill 9, $prove_pid;
-    waitpid $prove_pid, 0;
-    print STDERR shift;
-};
 
+is($finished_rounds, scalar(@prove_commands), 'Finished all tests without perl dying');
+
+done_testing;
