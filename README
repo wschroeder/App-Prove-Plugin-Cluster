@@ -1,1 +1,6 @@
 prove -v -PCluster -r t/fake_t
+
+
+Okay, big problem.  getline is blocking and does not allow us to bring in new
+sockets.  Basically, we can't send a test to a second socket and expect the
+either socket to be skipped over.  We always expect a result.
