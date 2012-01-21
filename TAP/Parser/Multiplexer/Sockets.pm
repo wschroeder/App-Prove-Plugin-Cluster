@@ -64,11 +64,20 @@ sub add {
 
 sub next {
     my $self = shift;
-    my ($parser, $stash, $result) = $self->SUPER::next(@_);
-    if (!defined($result)) {
-        $self->release_socket($parser->{socket});
+    my $avid = $self->{avid};
+    if (@$avid) {
+        my ( $parser, $stash ) = @{ $avid->[0] };
+        my $result = $parser->next;
+        shift @$avid unless defined $result;
+        if ($result && ref $result->raw && ${$result->raw} == undef) {
+            my $tail = shift @$avid;
+            push @$avid, $tail;
+        }
+        if (!defined($result)) {
+            $self->release_socket($parser->{socket});
+        }
+        return ($parser, $stash, $result);
     }
-    return ($parser, $stash, $result);
 }
 
 1;
