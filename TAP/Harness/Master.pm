@@ -151,7 +151,8 @@ sub aggregate_tests {
             $mux->add( $parser, [ $session, $job ] );
         }
 
-        if ( my ( $parser, $stash, $result ) = $mux->next ) {
+        my ( $parser, $stash, $result ) = $mux->next;
+        if (defined($stash)) {
             my ( $session, $job ) = @$stash;
             if ( defined $result ) {
                 if (!(ref $result->raw && ${$result->raw} == undef)) {
