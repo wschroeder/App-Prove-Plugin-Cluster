@@ -51,6 +51,7 @@ sub send_test_results {
 
 my @prove_commands = (
     [qw(prove -v -PCluster --jobs 3 -r t/fake_t/)],
+    [qw(prove -v -PCluster --jobs 10 -r t/fake_t/)],  # We can send tests to fewer than the total jobs
 );
 my $finished_rounds = 0;
 
