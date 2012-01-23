@@ -74,7 +74,7 @@ sub get_test {
 sub run_client {
     my ($class, $master_host, $master_port, $credentials) = @_;
     my $socket;
-    my $timeout = time + 10000;
+    my $timeout = time + 10;
 
     while (!$socket && time < $timeout) {
         $socket = IO::Socket::INET->new(

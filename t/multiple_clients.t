@@ -23,7 +23,7 @@ sub get_message {
 }
 
 sub connect_to_master {
-    my $timeout = time + 3000;
+    my $timeout = time + 3;
 
     my $socket;
     while (!$socket && time < $timeout) {

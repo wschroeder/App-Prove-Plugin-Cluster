@@ -41,7 +41,7 @@ for my $prove_command (@prove_commands) {
         like($credentials, qr{^cookie - \d+$}, 'validated credentials');
 
         my $socket;
-        my $timeout = time + 3000;
+        my $timeout = time + 3;
 
         while (!$socket && time < $timeout) {
             $socket = IO::Socket::INET->new(
