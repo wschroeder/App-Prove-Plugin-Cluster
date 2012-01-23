@@ -23,8 +23,8 @@ sub get_message {
 }
 
 my @prove_commands = (
-    [qw(prove -v -PCluster -r t/fake_t/)],
-    [qw(prove -v -PCluster --jobs 3 -r t/fake_t/)],
+    [qw(perl -I lib -S prove -v -PCluster -r t/fake_t/)],
+    [qw(perl -I lib -S prove -v -PCluster --jobs 3 -r t/fake_t/)],
 );
 my $finished_rounds = 0;
 
@@ -36,7 +36,7 @@ for my $prove_command (@prove_commands) {
     try {
         my $credentials = $prove_stderr->getline;
         chomp($credentials);
-        $credentials =~ s/TEST: //;
+        ($credentials) = $credentials =~ /^SLAVE CREDENTIALS: '(.*)'$/;
 
         like($credentials, qr{^cookie - \d+$}, 'validated credentials');
 
