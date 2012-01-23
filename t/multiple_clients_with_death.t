@@ -85,10 +85,10 @@ for my $scenario (@scenarios) {
 
             is(scalar(grep {$_} @sockets), 3, 'Connected exactly 3 clients');
 
-            my $regex = qr{\$test = \{
-          'source' => 't/fake_t/(\d+)-test\.t',
-          'switches' => \[\]
-        \};
+            my $regex = qr{\{
+  'source' => 't/fake_t/(\d+)-test\.t',
+  'switches' => \[\]
+\}
 };
 
             my @tests_found = ();

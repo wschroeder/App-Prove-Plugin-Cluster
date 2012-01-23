@@ -34,7 +34,7 @@ sub new {
 
     $self->{socket}->print(
         "BEGIN\n" .
-        Data::Dumper->new([$message], ['test'])->Dump .
+        Data::Dumper->new([$message])->Terse(1)->Dump .
         "END\n"
     );
 

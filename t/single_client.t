@@ -62,10 +62,10 @@ for my $prove_command (@prove_commands) {
 
             $socket->print("$credentials\n");
 
-            is(get_message($socket), qq{\$test = {
-          'source' => 't/fake_t/$test_number-test.t',
-          'switches' => []
-        };
+            is(get_message($socket), qq{{
+  'source' => 't/fake_t/$test_number-test.t',
+  'switches' => []
+}
 }, "Received test message for $test_number-test.t");
 
             $socket->print("random junk\n");
