@@ -2,11 +2,15 @@ package TAP::Parser::Iterator::Slave;
 use strict;
 use IO::Select;
 use Data::Dumper;
+use Symbol 'gensym';
 use vars (qw(@ISA $VERSION));
 use TAP::Parser::Iterator;
 @ISA = ('TAP::Parser::Iterator');
 
 $VERSION = '0.01';
+
+use constant SLAVE_NOT_READY_FOR_READ => gensym;
+use constant SLAVE_DISCONNECTED       => gensym;
 
 sub new {
     my $class = shift;
@@ -40,10 +44,16 @@ sub new {
 sub next_raw {
     my $self = shift;
 
+    my @ready = IO::Select->new($self->{socket})->can_read(0);
     my $response = $self->{socket}->getline;
 
+    if (@ready && !$response) {
+        $self->{exit} = 255;
+        return SLAVE_DISCONNECTED;
+    }
+
     if (!$response) {
-        return \undef;
+        return SLAVE_NOT_READY_FOR_READ;
     }
 
     chomp($response);

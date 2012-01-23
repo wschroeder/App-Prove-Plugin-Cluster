@@ -3,6 +3,7 @@ use strict;
 use vars qw($VERSION @ISA);
 use IO::Socket;
 use IO::Select;
+use TAP::Parser::ResultFactory;
 use TAP::Parser::Iterator::Slave;
 use TAP::Harness;
 @ISA = qw(TAP::Harness);
@@ -154,8 +155,27 @@ sub aggregate_tests {
         my ( $parser, $stash, $result ) = $mux->next;
         if (defined($stash)) {
             my ( $session, $job ) = @$stash;
+            if (defined $result && ref $result->raw && $result->raw == TAP::Parser::Iterator::Slave::SLAVE_DISCONNECTED) {
+                $result = undef;
+                @slaves = grep {$_ != $parser->{socket}} @slaves;
+                $parser->exit(255);
+                $session->result(
+                    TAP::Parser::ResultFactory->make_result({
+                        'type' => 'unknown',
+                        'raw' => 'CRITICAL ERROR: Slave process disconnected prematurely!'
+                    })
+                );
+            }
             if ( defined $result ) {
-                if (!(ref $result->raw && ${$result->raw} == undef)) {
+                if (
+                    !(
+                        ref $result->raw &&
+                        (
+                            $result->raw == TAP::Parser::Iterator::Slave::SLAVE_NOT_READY_FOR_READ ||
+                            $result->raw == TAP::Parser::Iterator::Slave::SLAVE_DISCONNECTED
+                        )
+                     )
+                ) {
                     $session->result($result);
                     $self->_bailout($result) if $result->is_bailout;
                 }

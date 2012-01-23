@@ -1,5 +1,6 @@
 package TAP::Parser::Multiplexer::Sockets;
 use strict;
+use TAP::Parser::Iterator::Slave;
 use TAP::Parser::Multiplexer;
 use vars qw($VERSION @ISA);
 
@@ -59,7 +60,7 @@ sub add {
     my $result = $self->SUPER::add(@_);
     my $job = $stash->[1];
     $self->reserve_socket($job->{socket});
-    $parser->{socket} = $job->{socket};  # TODO: Remove me when the source handler works properly
+    $parser->{socket} = $job->{socket};
 }
 
 sub next {
@@ -69,9 +70,12 @@ sub next {
         my ( $parser, $stash ) = @{ $avid->[0] };
         my $result = $parser->next;
         shift @$avid unless defined $result;
-        if ($result && ref $result->raw && ${$result->raw} == undef) {
+        if ($result && ref $result->raw && $result->raw == TAP::Parser::Iterator::Slave::SLAVE_NOT_READY_FOR_READ) {
             my $tail = shift @$avid;
             push @$avid, $tail;
+        }
+        elsif ($result && ref $result->raw && $result->raw == TAP::Parser::Iterator::Slave::SLAVE_DISCONNECTED) {
+            shift @$avid;   # Drop the socket forever.
         }
         if (!defined($result)) {
             $self->release_socket($parser->{socket});
