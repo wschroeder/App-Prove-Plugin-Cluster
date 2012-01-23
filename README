@@ -1,1 +1,3 @@
-prove -v -PCluster -r t/fake_t
+Example of usage across LSF:
+
+  perl -I lib -S prove -PClusterLSF -r t/fake_t
