@@ -45,7 +45,7 @@ sub new {
     $self->{slave_startup_callback}  = $DEFAULT_SLAVE_STARTUP_CALLBACK;
     $self->{slave_teardown_callback} = $DEFAULT_SLAVE_TEARDOWN_CALLBACK;
     $self->{credentials}             = "$COOKIE - " . time;
-    print STDERR "TEST: " . $self->{credentials} . "\n";
+    print STDERR "SLAVE CREDENTIALS: '" . $self->{credentials} . "'\n";
     return $self;
 }
 
