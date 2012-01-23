@@ -121,8 +121,8 @@ sub aggregate_tests {
     $self->formatter->prepare( map { $_->description } $scheduler->get_all );
 
     my $jobs               = $self->jobs;
-    my $slave_startup_data = $self->slave_startup_callback->($self, $aggregate, @tests);
     my $server             = $self->start_listening_for_slaves($jobs);
+    my $slave_startup_data = $self->slave_startup_callback->($self, $aggregate, @tests);
     my @slaves;
     while (!(@slaves = $self->detect_new_slaves($server))) {
         sleep(1);
