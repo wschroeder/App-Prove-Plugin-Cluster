@@ -77,11 +77,10 @@ for my $prove_command (@prove_commands) {
 
         is(scalar(grep {$_} @sockets), 3, 'Connected exactly 3 clients');
 
-        my $regex = qr{\{
-  'source' => 't/fake_t/(\d+)-test\.t',
-  'switches' => \[\]
-\}
-};
+        my $regex = qr{\s*\{
+\s*'source' => 't/fake_t/(\d+)-test\.t',
+\s*'switches' => \[\]
+\s*\}};
 
         my @tests_found = ();
 
