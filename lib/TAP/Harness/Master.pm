@@ -139,9 +139,15 @@ sub aggregate_tests {
     while (!(@slaves = $self->detect_new_slaves($server))) {
         sleep(1);
     }
-    my $mux                = $self->_construct($self->multiplexer_class, @slaves );
+    my $mux = $self->_construct($self->multiplexer_class, @slaves );
+    my $time_of_last_update = time;
 
     RESULT: {
+        if (time > $time_of_last_update + 60) {
+            $time_of_last_update = time;
+            print STDERR "Waiting for response from slaves with credentials " . $self->{credentials} . "\n";
+        }
+
         # Add slave sockets to multiplexer
         if (@slaves < $jobs) {
             my @new_slaves = $self->detect_new_slaves($server);
@@ -188,12 +194,14 @@ sub aggregate_tests {
                         )
                      )
                 ) {
+                    $time_of_last_update = time;
                     $session->result($result);
                     $self->_bailout($result) if $result->is_bailout;
                 }
             }
             else {
                 # End of parser. Automatically removed from the mux.
+                $time_of_last_update = time;
                 $self->finish_parser( $parser, $session );
                 $self->_after_test( $aggregate, $job, $parser );
                 $job->finish;
