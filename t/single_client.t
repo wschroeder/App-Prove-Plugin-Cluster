@@ -7,6 +7,9 @@ use IO::Socket;
 use IO::Select;
 use Try::Tiny;
 
+# If this is set in the environment, it will interfere with this test.  Remove.
+delete $ENV{PERL_TEST_HARNESS_DUMP_TAP};
+
 sub get_message {
     my $socket = shift;
     is($socket->getline, "BEGIN\n", 'Saw BEGINning of message');
