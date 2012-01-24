@@ -120,7 +120,6 @@ sub aggregate_tests {
     # Formatter gets only names.
     $self->formatter->prepare( map { $_->description } $scheduler->get_all );
 
-    my $jobs               = $self->jobs;
     my $server             = $self->start_listening_for_slaves($jobs);
     my $slave_startup_data = $self->slave_startup_callback->($self, $aggregate, @tests);
     my @slaves;
