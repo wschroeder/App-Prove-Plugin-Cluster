@@ -67,14 +67,27 @@ sub slave_teardown_callback {
 
 sub start_listening_for_slaves {
     my ($self, $jobs) = @_;
-    return IO::Socket::INET->new(
-        Proto     => 'tcp',
-        LocalPort => $LISTEN_PORT,
-        Listen    => $jobs,
-        ReuseAddr => 1,
-        Timeout   => 0,
-        Blocking  => 0
-    ) || die "Unable to create server";
+    my $server;
+
+    while (!$server && $LISTEN_PORT <= 30000) {
+        $server = IO::Socket::INET->new(
+            Proto     => 'tcp',
+            LocalPort => $LISTEN_PORT,
+            Listen    => $jobs,
+            ReuseAddr => 1,
+            Timeout   => 0,
+            Blocking  => 0
+        );
+        if (!$server) {
+            $LISTEN_PORT++;
+        }
+    }
+
+    if (!$server) {
+        die "Unable to create server";
+    }
+
+    return $server;
 }
 
 sub detect_new_slaves {
