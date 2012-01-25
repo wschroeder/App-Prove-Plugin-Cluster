@@ -5,6 +5,7 @@ use Getopt::Long;
 use Carp;
 use IO::Handle;
 use IO::Socket;
+use IO::Select;
 use IPC::Open3;
 
 sub parse_additional_options {
@@ -98,19 +99,14 @@ sub run_client {
         my $stdout       = IO::Handle->new;
         my $stderr       = IO::Handle->new;
         my $pid          = open3(undef, $stdout, $stderr, 'perl', @switches, $test_source);
-        my $wait_result  = waitpid $pid, 0;
-        my $status       = $?;
-        my $send_timeout = time + 30;
-        my $sent_size;
-        while (!$sent_size && time < $send_timeout) {
-            $sent_size = $socket->print(join('', grep {$_} ($stdout->getlines, $stderr->getlines)));
-            if (!$sent_size) {
-                sleep(0.5);
+        my @lines;
+        do {
+            my @ready = IO::Select->new($stdout, $stderr)->can_read;
+            @lines = grep {$_} map {$_->getline} @ready;
+            if (@lines) {
+                $socket->print(join('', grep {$_} @lines));
             }
-        }
-        if (!$sent_size) {
-            die "Unable to send data to master prove process";
-        }
+        } while (@lines);
     }
 }
 
