@@ -92,15 +92,25 @@ sub run_client {
     }
 
     while (1) {
-        my $test_info   = $class->get_test($socket, $credentials);
-        my $test_source = $test_info->{source};
-        my @switches    = @{$test_info->{switches}};
-        my $stdout      = IO::Handle->new;
-        my $stderr      = IO::Handle->new;
-        my $pid         = open3(undef, $stdout, $stderr, 'perl', @switches, $test_source);
-        my $wait_result = waitpid $pid, 0;
-        my $status      = $?;
-        $socket->print(join('', grep {$_} ($stdout->getlines, $stderr->getlines)));
+        my $test_info    = $class->get_test($socket, $credentials);
+        my $test_source  = $test_info->{source};
+        my @switches     = @{$test_info->{switches}};
+        my $stdout       = IO::Handle->new;
+        my $stderr       = IO::Handle->new;
+        my $pid          = open3(undef, $stdout, $stderr, 'perl', @switches, $test_source);
+        my $wait_result  = waitpid $pid, 0;
+        my $status       = $?;
+        my $send_timeout = time + 30;
+        my $sent_size;
+        while (!$sent_size && time < $send_timeout) {
+            $sent_size = $socket->print(join('', grep {$_} ($stdout->getlines, $stderr->getlines)));
+            if (!$sent_size) {
+                sleep(0.5);
+            }
+        }
+        if (!$sent_size) {
+            die "Unable to send data to master prove process";
+        }
     }
 }
 
