@@ -17,15 +17,17 @@ sub parse_lsf_options {
     local @ARGV = @args;
     Getopt::Long::Configure(qw(no_ignore_case bundling pass_through));
 
-    my ($lsf_queue, $lsf_resources);
+    my ($lsf_queue, $lsf_resources, $lsf_startup, $lsf_teardown);
     GetOptions(
         'lsf-queue=s'     => \$lsf_queue,
         'lsf-resources=s' => \$lsf_resources,
+        'lsf-startup=s'   => \$lsf_startup,
+        'lsf-teardown=s'  => \$lsf_teardown,
     ) or croak('Unable to parse parameters');
 
     $app->{argv} = [@ARGV];
 
-    return ($lsf_queue, $lsf_resources);
+    return ($lsf_queue, $lsf_resources, $lsf_startup, $lsf_teardown);
 }
 
 sub load {
@@ -35,7 +37,7 @@ sub load {
     my $p   = shift;
     my $app = $p->{app_prove};
 
-    my ($lsf_queue, $lsf_resources) = $class->parse_lsf_options($app);
+    my ($lsf_queue, $lsf_resources, $lsf_startup, $lsf_teardown) = $class->parse_lsf_options($app);
 
     $TAP::Harness::Master::DEFAULT_SLAVE_STARTUP_CALLBACK = sub {
         my ($self, $aggregate, @tests) = @_;
@@ -50,6 +52,8 @@ sub load {
                 '-PSlave',
                 '--master-host', hostname,
                 '--master-port', $TAP::Harness::Master::LISTEN_PORT,
+                ($lsf_startup   ? ('--lsf-startup',  $lsf_startup)  : ()),
+                ($lsf_teardown  ? ('--lsf-teardown', $lsf_teardown) : ()),
                 '--credentials', $self->{credentials}
             );
         }

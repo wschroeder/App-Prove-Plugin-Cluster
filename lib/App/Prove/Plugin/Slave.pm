@@ -15,11 +15,13 @@ sub parse_additional_options {
     local @ARGV = @args;
     Getopt::Long::Configure(qw(no_ignore_case bundling pass_through));
 
-    my ($master_host, $master_port, $credentials);
+    my ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown);
     GetOptions(
-        'master-host=s' => \$master_host,
-        'master-port=s' => \$master_port,
-        'credentials=s' => \$credentials,
+        'master-host=s'  => \$master_host,
+        'master-port=s'  => \$master_port,
+        'credentials=s'  => \$credentials,
+        'lsf-startup=s'  => \$lsf_startup,
+        'lsf-teardown=s' => \$lsf_teardown,
     ) or croak('Unable to parse parameters');
 
     $app->{argv} = [@ARGV];
@@ -34,13 +36,28 @@ sub parse_additional_options {
         die "Did not specify --credentials";
     }
 
-    return ($master_host, $master_port, $credentials);
+    return ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown);
 }
+
+our $TEARDOWN_CALLBACK = sub {};
 
 sub load {
     my ($class, $p) = @_;
     my $app  = $p->{app_prove};
-    my ($master_host, $master_port, $credentials) = $class->parse_additional_options($app);
+    my ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown) = $class->parse_additional_options($app);
+
+    if ($lsf_startup) {
+        if (system($lsf_startup) || $?) {
+            die "Startup failed";
+        }
+    }
+    if ($lsf_teardown) {
+        $TEARDOWN_CALLBACK = sub { system($lsf_teardown) };
+        for my $signal (qw(INT KILL ABRT)) {
+            $SIG{$signal} = $TEARDOWN_CALLBACK;
+        }
+    }
+
     $class->run_client($master_host, $master_port, $credentials);
 }
 
@@ -53,6 +70,7 @@ sub get_test {
 
     # Master prove is finished
     if (!defined($begin_line)) {
+        $TEARDOWN_CALLBACK->();
         exit(0);
     }
 
