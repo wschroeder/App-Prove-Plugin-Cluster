@@ -46,10 +46,11 @@ sub load {
     my $app  = $p->{app_prove};
     my ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown) = $class->parse_additional_options($app);
 
+    local %SIG = %SIG;
     if ($lsf_teardown) {
         $TEARDOWN_CALLBACK = sub { system($lsf_teardown) };
         for my $signal (qw(INT KILL ABRT STOP __DIE__)) {
-            local $SIG{$signal} = $TEARDOWN_CALLBACK;
+            $SIG{$signal} = $TEARDOWN_CALLBACK;
         }
     }
     if ($lsf_startup) {
