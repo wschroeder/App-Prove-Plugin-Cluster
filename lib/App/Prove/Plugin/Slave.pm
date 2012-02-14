@@ -49,7 +49,7 @@ sub load {
     if ($lsf_teardown) {
         $TEARDOWN_CALLBACK = sub { system($lsf_teardown) };
         for my $signal (qw(INT KILL ABRT STOP __DIE__)) {
-            $SIG{$signal} = $TEARDOWN_CALLBACK;
+            local $SIG{$signal} = $TEARDOWN_CALLBACK;
         }
     }
     if ($lsf_startup) {
