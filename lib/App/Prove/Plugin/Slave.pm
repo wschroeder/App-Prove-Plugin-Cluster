@@ -46,15 +46,15 @@ sub load {
     my $app  = $p->{app_prove};
     my ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown) = $class->parse_additional_options($app);
 
+    if ($lsf_teardown) {
+        $TEARDOWN_CALLBACK = sub { system($lsf_teardown) };
+        for my $signal (qw(INT KILL ABRT STOP __DIE__)) {
+            $SIG{$signal} = $TEARDOWN_CALLBACK;
+        }
+    }
     if ($lsf_startup) {
         if (system($lsf_startup) || $?) {
             die "Startup failed";
-        }
-    }
-    if ($lsf_teardown) {
-        $TEARDOWN_CALLBACK = sub { system($lsf_teardown) };
-        for my $signal (qw(INT KILL ABRT)) {
-            $SIG{$signal} = $TEARDOWN_CALLBACK;
         }
     }
 
