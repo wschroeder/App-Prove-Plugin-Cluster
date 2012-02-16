@@ -7,6 +7,7 @@ use IO::Handle;
 use IO::Socket;
 use IO::Select;
 use IPC::Open3;
+use Sys::Hostname;
 
 sub parse_additional_options {
     my ($class, $app) = @_;
@@ -118,6 +119,9 @@ sub run_client {
         my $stdout       = IO::Handle->new;
         my $stderr       = IO::Handle->new;
         my $pid          = open3(undef, $stdout, $stderr, 'perl', @switches, $test_source);
+
+        $socket->print('# Host: ' . hostname . "\n");
+
         my @lines;
         do {
             my @ready = IO::Select->new($stdout, $stderr)->can_read;
