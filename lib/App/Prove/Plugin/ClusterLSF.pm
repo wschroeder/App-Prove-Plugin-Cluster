@@ -64,7 +64,7 @@ sub load {
                 ($lsf_queue     ? ('-q', $lsf_queue)     : ()),
                 ($lsf_resources ? ('-R', $lsf_resources) : ()),
                 'prove',
-                ($includes               ? map {('-I', $_)} @$includes : ()),
+                ($includes               ? (map {('-I', $_)} @$includes) : ()),
                 '-PSlave',
                 '--master-host', hostname,
                 '--master-port', $TAP::Harness::Master::LISTEN_PORT,
