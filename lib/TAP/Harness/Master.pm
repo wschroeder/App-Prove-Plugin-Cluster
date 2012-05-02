@@ -198,14 +198,14 @@ sub aggregate_tests {
                      )
                 ) {
                     $time_of_last_update = time;
-                    $session->result($result);
+                    $self->_do_with_autoflush_on( sub { $session->result($result) } );
                     $self->_bailout($result) if $result->is_bailout;
                 }
             }
             else {
                 # End of parser. Automatically removed from the mux.
                 $time_of_last_update = time;
-                $self->finish_parser( $parser, $session );
+                $self->_do_with_autoflush_on( sub { $self->finish_parser( $parser, $session ) } );
                 $self->_after_test( $aggregate, $job, $parser );
                 $job->finish;
             }
@@ -214,6 +214,18 @@ sub aggregate_tests {
     }
 
     return;
+}
+
+sub _do_with_autoflush_on {
+    my($self, $sub) = @_;
+
+    my $output_fh = $self->formatter->stdout;
+    my $orig_autoflush = $|;
+    my $orig_fh = select $output_fh;
+    local $| = 1;
+    select $orig_fh;
+
+    &$sub;
 }
 
 sub _get_parser_args {
