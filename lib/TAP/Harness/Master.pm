@@ -132,6 +132,12 @@ sub aggregate_tests {
 
     my $server             = $self->start_listening_for_slaves($jobs);
     my $slave_startup_data = $self->slave_startup_callback->($self, $aggregate, @tests);
+
+    $self->callback('after_runtests' => sub {
+                        my $aggregate = shift;
+                        $self->slave_teardown_callback->($self, $aggregate, $slave_startup_data)
+                   });
+
     my @slaves;
     while (!(@slaves = $self->detect_new_slaves($server))) {
         sleep(1);
@@ -206,8 +212,6 @@ sub aggregate_tests {
             redo RESULT;
         }
     }
-
-    $self->slave_teardown_callback->($slave_startup_data);
 
     return;
 }

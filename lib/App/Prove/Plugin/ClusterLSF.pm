@@ -58,9 +58,11 @@ sub load {
         my ($self, $aggregate, @tests) = @_;
         my $listen_port = $self->{'master_listen_port'};
         my $jobs = $self->jobs;
+        my $bsub_stdout;
+        my @lsf_job_ids;
         for (1..$jobs) {
             open3(
-                undef, undef, undef,  # std pipes
+                undef, $bsub_stdout, undef,  # std pipes
                 'bsub',               # command
                 ($lsf_queue     ? ('-q', $lsf_queue)     : ()),
                 ($lsf_resources ? ('-R', $lsf_resources) : ()),
@@ -77,7 +79,20 @@ sub load {
                 '--credentials', $self->{credentials},
                 ($test_args               ? ('::', @$test_args) : ()),
             );
+
+            my $output = <$bsub_stdout>;
+            if ($output =~ m/^Job \<(\d+)\>/) {
+                push @lsf_job_ids, $1;
+            } else {
+                warn "Submitting LSF failed: $output";
+            }
         }
+        return \@lsf_job_ids;
+    };
+
+    $TAP::Harness::Master::DEFAULT_SLAVE_TEARDOWN_CALLBACK = sub {
+        my($self, $aggregate, $lsf_job_ids) = @_;
+        system("bkill $_") foreach @$lsf_job_ids;
     };
 
     return 1;
