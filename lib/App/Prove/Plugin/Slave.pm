@@ -171,6 +171,8 @@ sub run_client {
         my $test_source  = $test_info->{source};
         my $switches     = $test_info->{switches} || [];
 
+        $socket->print('# Host: ' . hostname . "\n");
+
         if ($test_in_process) {
             # We need to fork because we want to create separate test plans within "the same process".
             # Do not close the socket!  We need the same socket to Master open.
@@ -201,18 +203,8 @@ sub run_client {
             }
         }
         else {
-            my $stdout = IO::Handle->new;
-            my $stderr = IO::Handle->new;
-            my $pid    = open3(undef, $stdout, $stderr, 'perl', @$switches, (map {('-I', $_)} $class->includes($includes)), $test_source, @$test_args);
-
-            my @lines;
-            do {
-                my @ready = IO::Select->new($stdout, $stderr)->can_read;
-                @lines = grep {$_} map {$_->getline} @ready;
-                if (@lines) {
-                    $socket->print(join('', grep {$_} @lines));
-                }
-            } while (@lines);
+            my $pid = open3(undef, ">&".fileno($socket), undef, 'perl', @$switches, (map {('-I', $_)} $class->includes($includes)), $test_source, @$test_args);
+            waitpid($pid, 0);
         }
     }
 }
