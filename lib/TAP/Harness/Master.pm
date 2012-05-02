@@ -33,7 +33,6 @@ slaves and results automatically aggregated and output to STDOUT.
 
 =cut
 
-our $LISTEN_PORT                     = 12012;
 our $COOKIE                          = 'cookie';
 our $DEFAULT_SLAVE_STARTUP_CALLBACK  = sub {};
 our $DEFAULT_SLAVE_TEARDOWN_CALLBACK = sub {};
@@ -69,23 +68,21 @@ sub start_listening_for_slaves {
     my ($self, $jobs) = @_;
     my $server;
 
-    while (!$server && $LISTEN_PORT <= 30000) {
+    my $retry = 0;
+    while (!$server and $retry++ < 5) {
         $server = IO::Socket::INET->new(
             Proto     => 'tcp',
-            LocalPort => $LISTEN_PORT,
             Listen    => $jobs,
-            ReuseAddr => 1,
             Timeout   => 0,
             Blocking  => 0
         );
-        if (!$server) {
-            $LISTEN_PORT++;
-        }
     }
 
     if (!$server) {
         die "Unable to create server";
     }
+
+    $self->{'master_listen_port'} = $server->sockport;
 
     return $server;
 }

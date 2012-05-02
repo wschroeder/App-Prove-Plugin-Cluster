@@ -56,6 +56,7 @@ sub load {
 
     $TAP::Harness::Master::DEFAULT_SLAVE_STARTUP_CALLBACK = sub {
         my ($self, $aggregate, @tests) = @_;
+        my $listen_port = $self->{'master_listen_port'};
         my $jobs = $self->jobs;
         for (1..$jobs) {
             open3(
@@ -67,7 +68,7 @@ sub load {
                 ($includes               ? (map {('-I', $_)} @$includes) : ()),
                 '-PSlave',
                 '--master-host', hostname,
-                '--master-port', $TAP::Harness::Master::LISTEN_PORT,
+                '--master-port', $listen_port,
                 ($lsf_startup             ? ('--lsf-startup',             $lsf_startup)  : ()),
                 ($lsf_teardown            ? ('--lsf-teardown',            $lsf_teardown) : ()),
                 ($lsf_startup_in_process  ? ('--lsf-startup-in-process',  $lsf_startup_in_process)  : ()),
