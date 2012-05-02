@@ -58,9 +58,9 @@ sub load {
         my ($self, $aggregate, @tests) = @_;
         my $listen_port = $self->{'master_listen_port'};
         my $jobs = $self->jobs;
-        my $bsub_stdout;
         my @lsf_job_ids;
         for (1..$jobs) {
+            my $bsub_stdout;
             open3(
                 undef, $bsub_stdout, undef,  # std pipes
                 'bsub',               # command
