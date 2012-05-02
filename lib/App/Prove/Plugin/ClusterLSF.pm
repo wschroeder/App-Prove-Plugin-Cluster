@@ -74,7 +74,7 @@ sub load {
                 ($lsf_teardown_in_process ? ('--lsf-teardown-in-process', $lsf_teardown_in_process) : ()),
                 ($lsf_test_in_process     ? '--lsf-test-in-process' : ()),
                 '--credentials', $self->{credentials},
-                (@$test_args              ? ('::', @$test_args) : ()),
+                ($test_args               ? ('::', @$test_args) : ()),
             );
         }
     };
