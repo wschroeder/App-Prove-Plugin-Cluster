@@ -1,6 +1,6 @@
-package TAP::Parser::Multiplexer::Sockets;
+package TAP::Parser::Multiplexer::ClusterSockets;
 use strict;
-use TAP::Parser::Iterator::Slave;
+use TAP::Parser::Iterator::ClusterSlave;
 use TAP::Parser::Multiplexer;
 use vars qw($VERSION @ISA);
 
@@ -70,11 +70,11 @@ sub next {
         my ( $parser, $stash ) = @{ $avid->[0] };
         my $result = $parser->next;
         shift @$avid unless defined $result;
-        if ($result && ref $result->raw && $result->raw == TAP::Parser::Iterator::Slave::SLAVE_NOT_READY_FOR_READ) {
+        if ($result && ref $result->raw && $result->raw == TAP::Parser::Iterator::ClusterSlave::SLAVE_NOT_READY_FOR_READ) {
             my $tail = shift @$avid;
             push @$avid, $tail;
         }
-        elsif ($result && ref $result->raw && $result->raw == TAP::Parser::Iterator::Slave::SLAVE_DISCONNECTED) {
+        elsif ($result && ref $result->raw && $result->raw == TAP::Parser::Iterator::ClusterSlave::SLAVE_DISCONNECTED) {
             shift @$avid;   # Drop the socket forever.
         }
         if (!defined($result)) {

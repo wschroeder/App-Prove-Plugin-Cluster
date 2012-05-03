@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Carp;
-use TAP::Harness::Master;
+use TAP::Harness::ClusterMaster;
 use IPC::Open3;
 use Sys::Hostname;
 use App::Prove::Plugin::Cluster;
@@ -54,7 +54,7 @@ sub load {
     my $includes  = $app->{includes};
     my $test_args = $app->{test_args};
 
-    $TAP::Harness::Master::DEFAULT_SLAVE_STARTUP_CALLBACK = sub {
+    $TAP::Harness::ClusterMaster::DEFAULT_SLAVE_STARTUP_CALLBACK = sub {
         my ($self, $aggregate, @tests) = @_;
         my $listen_port = $self->{'master_listen_port'};
         my $jobs = $self->jobs;
@@ -90,7 +90,7 @@ sub load {
         return \@lsf_job_ids;
     };
 
-    $TAP::Harness::Master::DEFAULT_SLAVE_TEARDOWN_CALLBACK = sub {
+    $TAP::Harness::ClusterMaster::DEFAULT_SLAVE_TEARDOWN_CALLBACK = sub {
         my($self, $aggregate, $lsf_job_ids) = @_;
         system("bkill $_") foreach @$lsf_job_ids;
     };

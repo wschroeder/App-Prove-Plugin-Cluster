@@ -1,4 +1,4 @@
-package TAP::Parser::Iterator::Slave;
+package TAP::Parser::Iterator::ClusterSlave;
 use strict;
 use IO::Select;
 use Data::Dumper;
@@ -26,7 +26,7 @@ sub new {
     };
 
     if (keys %args) {
-        die "Unknown arguments to TAP::Parser::Iterator::Slave";
+        die "Unknown arguments to TAP::Parser::Iterator::ClusterSlave";
     }
 
     $self->{wait} = 0;

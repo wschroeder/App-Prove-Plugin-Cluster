@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Carp;
-use TAP::Harness::Master;
+use TAP::Harness::ClusterMaster;
 
 sub parse_additional_options {
     my ($class, $app) = @_;
@@ -35,13 +35,13 @@ sub load {
 
     if ($master_port) {
         # The user wanted to manually specify a port instead of letting the system pick one
-        $TAP::Harness::Master::LISTEN_PORT = $master_port;
+        $TAP::Harness::ClusterMaster::LISTEN_PORT = $master_port;
     }
     if ($cookie) {
-        $TAP::Harness::Master::COOKIE = $cookie;
+        $TAP::Harness::ClusterMaster::COOKIE = $cookie;
     }
 
-    $app->require_harness('*' => 'TAP::Harness::Master');
+    $app->require_harness('*' => 'TAP::Harness::ClusterMaster');
 
     return 1;
 }

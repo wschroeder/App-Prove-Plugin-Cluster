@@ -1,4 +1,4 @@
-package App::Prove::Plugin::Slave;
+package App::Prove::Plugin::ClusterSlave;
 use strict;
 use warnings;
 use Getopt::Long;

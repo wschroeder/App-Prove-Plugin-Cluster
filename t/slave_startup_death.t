@@ -1,14 +1,14 @@
 use strict;
 use warnings;
 use Test::Most;
-use App::Prove::Plugin::Slave;
+use App::Prove::Plugin::ClusterSlave;
 use Try::Tiny;
 
 # If this is set in the environment, it will interfere with this test.  Remove.
 delete $ENV{PERL_TEST_HARNESS_DUMP_TAP};
 
 dies_ok {
-    App::Prove::Plugin::Slave->load({
+    App::Prove::Plugin::ClusterSlave->load({
         app_prove => {
             argv => [qw{ --master-host=localhost --master-port=12012 --credentials=meeger --lsf-startup=doesnt_exist }],
         },
@@ -16,7 +16,7 @@ dies_ok {
 } 'Cannot execute what doesnt_exist';
 
 dies_ok {
-    App::Prove::Plugin::Slave->load({
+    App::Prove::Plugin::ClusterSlave->load({
         app_prove => {
             argv => [qw{ --master-host=localhost --master-port=12012 --credentials=meeger --lsf-startup=t/slave_startup_death/fail.sh }],
         },
@@ -25,7 +25,7 @@ dies_ok {
 
 my $died;
 try {
-    App::Prove::Plugin::Slave->load({
+    App::Prove::Plugin::ClusterSlave->load({
         app_prove => {
             argv => [qw{ --master-host=localhost --master-port=12012 --credentials=meeger --lsf-startup=t/slave_startup_death/success.sh }],
         },

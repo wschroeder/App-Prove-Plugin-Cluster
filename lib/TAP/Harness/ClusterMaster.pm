@@ -1,16 +1,16 @@
-package TAP::Harness::Master;
+package TAP::Harness::ClusterMaster;
 use strict;
 use vars qw($VERSION @ISA);
 use IO::Socket;
 use IO::Select;
 use TAP::Parser::ResultFactory;
-use TAP::Parser::Iterator::Slave;
+use TAP::Parser::Iterator::ClusterSlave;
 use TAP::Harness;
 @ISA = qw(TAP::Harness);
 
 =head1 NAME
 
-TAP::Harness::Master - Run tests across remote hosts with Slaves
+TAP::Harness::ClusterMaster - Run tests across remote hosts with Slaves
 
 =head1 VERSION
 
@@ -27,8 +27,8 @@ slaves and results automatically aggregated and output to STDOUT.
 
 =head1 SYNOPSIS
 
- use TAP::Harness::Master;
- my $harness = TAP::Harness::Master->new( \%args );
+ use TAP::Harness::ClusterMaster;
+ my $harness = TAP::Harness::ClusterMaster->new( \%args );
  $harness->runtests(@tests);
 
 =cut
@@ -40,7 +40,7 @@ our $DEFAULT_SLAVE_TEARDOWN_CALLBACK = sub {};
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    $self->{multiplexer_class} = 'TAP::Parser::Multiplexer::Sockets';
+    $self->{multiplexer_class} = 'TAP::Parser::Multiplexer::ClusterSockets';
     $self->{slave_startup_callback}  = $DEFAULT_SLAVE_STARTUP_CALLBACK;
     $self->{slave_teardown_callback} = $DEFAULT_SLAVE_TEARDOWN_CALLBACK;
     $self->{credentials}             = "$COOKIE - " . time;
@@ -72,7 +72,7 @@ sub start_listening_for_slaves {
     while (!$server and $retry++ < 5) {
         $server = IO::Socket::INET->new(
             Proto     => 'tcp',
-            LocalPort => $TAP::Harness::Master::LISTEN_PORT,
+            LocalPort => $TAP::Harness::ClusterMaster::LISTEN_PORT,
             Listen    => $jobs,
             ReuseAddr => 1,
             Timeout   => 0,
@@ -178,7 +178,7 @@ sub aggregate_tests {
         my ( $parser, $stash, $result ) = $mux->next;
         if (defined($stash)) {
             my ( $session, $job ) = @$stash;
-            if (defined $result && ref $result->raw && $result->raw == TAP::Parser::Iterator::Slave::SLAVE_DISCONNECTED) {
+            if (defined $result && ref $result->raw && $result->raw == TAP::Parser::Iterator::ClusterSlave::SLAVE_DISCONNECTED) {
                 $result = undef;
                 @slaves = grep {$_ != $parser->{socket}} @slaves;
                 $parser->exit(255);
@@ -194,8 +194,8 @@ sub aggregate_tests {
                     !(
                         ref $result->raw &&
                         (
-                            $result->raw == TAP::Parser::Iterator::Slave::SLAVE_NOT_READY_FOR_READ ||
-                            $result->raw == TAP::Parser::Iterator::Slave::SLAVE_DISCONNECTED
+                            $result->raw == TAP::Parser::Iterator::ClusterSlave::SLAVE_NOT_READY_FOR_READ ||
+                            $result->raw == TAP::Parser::Iterator::ClusterSlave::SLAVE_DISCONNECTED
                         )
                      )
                 ) {
@@ -235,7 +235,7 @@ sub _get_parser_args {
     my ($job) = @_;
     my $args = $self->SUPER::_get_parser_args(@_);
 
-    $args->{iterator} = TAP::Parser::Iterator::Slave->new(
+    $args->{iterator} = TAP::Parser::Iterator::ClusterSlave->new(
         socket      => $job->{socket},
         credentials => $self->{credentials},
         source      => delete $args->{source},
