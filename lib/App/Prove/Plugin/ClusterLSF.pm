@@ -68,7 +68,7 @@ sub load {
                 ($lsf_resources ? ('-R', $lsf_resources) : ()),
                 'prove',
                 ($includes               ? (map {('-I', $_)} @$includes) : ()),
-                '-PSlave',
+                '-PClusterSlave',
                 '--master-host', hostname,
                 '--master-port', $listen_port,
                 ($lsf_startup             ? ('--lsf-startup',             $lsf_startup)  : ()),
