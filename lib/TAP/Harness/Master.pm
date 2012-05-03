@@ -74,6 +74,7 @@ sub start_listening_for_slaves {
             Proto     => 'tcp',
             LocalPort => $TAP::Harness::Master::LISTEN_PORT,
             Listen    => $jobs,
+            ReuseAddr => 1,
             Timeout   => 0,
             Blocking  => 0
         );
