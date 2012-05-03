@@ -77,6 +77,11 @@ sub load {
     }
 
     if ($lsf_startup_in_process) {
+        my $includes = $app->{includes};
+        if ($includes) {
+            $ENV{PERL5LIB} .= ':' . join ':', map {($_ =~ m{^/}) ? $_ : $ENV{PWD} . "/$_"} @$includes;
+            push @INC, $class->includes($includes);
+        }
         $class->eval_perl_script_in_process($lsf_startup_in_process);
     }
 
@@ -187,12 +192,6 @@ sub run_client {
                     $builder->output($socket);
                     $builder->failure_output($socket);
                     $builder->todo_output($socket);
-
-                    # Set the environment to have our includes for tests
-                    if (@$includes) {
-                        $ENV{PERL5LIB} .= ':' . join ':', map {($_ =~ m{^/}) ? $_ : $ENV{PWD} . "/$_"} @$includes;
-                        push @INC, $class->includes($includes);
-                    }
 
                     $class->eval_perl_script_in_process($test_source, $test_args);
                 };
