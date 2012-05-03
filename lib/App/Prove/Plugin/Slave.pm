@@ -107,13 +107,7 @@ sub eval_perl_script_in_process {
         do $0;               # do $0; could be enough for strict scripts
         chdir($cwd);
 
-        if ($EVAL_ERROR) {
-            $EVAL_ERROR =~ s{\n+\z}{};
-            unless ( $EVAL_ERROR =~ m{^notr3a11yeXit} ) {
-                die $EVAL_ERROR;
-            }
-        }
-        elsif ($@) {
+        if ($@) {
             die $@;
         }
     }
