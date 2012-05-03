@@ -34,6 +34,7 @@ sub load {
     }
 
     if ($master_port) {
+        # The user wanted to manually specify a port instead of letting the system pick one
         $TAP::Harness::Master::LISTEN_PORT = $master_port;
     }
     if ($cookie) {

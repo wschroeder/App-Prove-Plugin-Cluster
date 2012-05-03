@@ -72,6 +72,7 @@ sub start_listening_for_slaves {
     while (!$server and $retry++ < 5) {
         $server = IO::Socket::INET->new(
             Proto     => 'tcp',
+            LocalPort => $TAP::Harness::Master::LISTEN_PORT,
             Listen    => $jobs,
             Timeout   => 0,
             Blocking  => 0
