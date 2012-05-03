@@ -53,8 +53,8 @@ sub send_test_results {
 }
 
 my @prove_commands = (
-    [qw(perl -I lib -S prove -v -PCluster --jobs 3 -r t/fake_t/)],
-    [qw(perl -I lib -S prove -v -PCluster --jobs 10 -r t/fake_t/)],  # We can send tests to fewer than the total jobs
+    [qw(perl -I lib -S prove -v -PCluster --master-port 12012 --jobs 3 -r t/fake_t/)],
+    [qw(perl -I lib -S prove -v -PCluster --master-port 12012 --jobs 10 -r t/fake_t/)],  # We can send tests to fewer than the total jobs
 );
 my $finished_rounds = 0;
 

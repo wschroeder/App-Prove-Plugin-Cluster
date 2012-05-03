@@ -60,8 +60,8 @@ my @scenarios = (qw(
 ));
 
 my @prove_commands = (
-    [qw(perl -I lib -S prove -v -PCluster --jobs 3 -r t/fake_t/)],
-    [qw(perl -I lib -S prove -v -PCluster --jobs 4 -r t/fake_t/)],
+    [qw(perl -I lib -S prove -v -PCluster --master-port 12012 --jobs 3 -r t/fake_t/)],
+    [qw(perl -I lib -S prove -v -PCluster --master-port 12012 --jobs 4 -r t/fake_t/)],
 );
 
 

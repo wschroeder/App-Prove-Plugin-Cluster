@@ -26,8 +26,8 @@ sub get_message {
 }
 
 my @prove_commands = (
-    [qw(perl -I lib -S prove -v -PCluster -r t/fake_t/)],
-    [qw(perl -I lib -S prove -v -PCluster --jobs 3 -r t/fake_t/)],
+    [qw(perl -I lib -S prove -v -PCluster --master-port 12012 -r t/fake_t/)],
+    [qw(perl -I lib -S prove -v -PCluster --master-port 12012 --jobs 3 -r t/fake_t/)],
 );
 my $finished_rounds = 0;
 
