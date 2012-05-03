@@ -107,7 +107,7 @@ sub eval_perl_script_in_process {
         do $0;               # do $0; could be enough for strict scripts
         chdir($cwd);
 
-        if ($@) {
+        if ($@ && $@ ne 'notr3a11yeXit') {
             die $@;
         }
     }
