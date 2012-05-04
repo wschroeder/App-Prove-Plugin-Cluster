@@ -17,7 +17,7 @@ sub parse_lsf_options {
     local @ARGV = @args;
     Getopt::Long::Configure(qw(no_ignore_case bundling pass_through));
 
-    my ($lsf_queue, $lsf_resources, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process, $lsf_kill_on_exit);
+    my ($lsf_queue, $lsf_resources, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process);
     GetOptions(
         'lsf-queue=s'               => \$lsf_queue,
         'lsf-resources=s'           => \$lsf_resources,
@@ -26,7 +26,6 @@ sub parse_lsf_options {
         'lsf-startup-in-process=s'  => \$lsf_startup_in_process,
         'lsf-teardown-in-process=s' => \$lsf_teardown_in_process,
         'lsf-test-in-process'       => \$lsf_test_in_process,
-        'lsf-kill-on-exit'          => \$lsf_kill_on_exit,
     ) or croak('Unable to parse parameters');
 
     $app->{argv} = [@ARGV];
@@ -39,7 +38,7 @@ sub parse_lsf_options {
         die "File specified in --lsf-teardown-in-process ($lsf_teardown_in_process) does not exist";
     }
 
-    return ($lsf_queue, $lsf_resources, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process, $lsf_kill_on_exit);
+    return ($lsf_queue, $lsf_resources, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process);
 }
 
 sub load {
@@ -49,7 +48,7 @@ sub load {
     my $p   = shift;
     my $app = $p->{app_prove};
 
-    my ($lsf_queue, $lsf_resources, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process, $lsf_kill_on_exit) =
+    my ($lsf_queue, $lsf_resources, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process) =
         $class->parse_lsf_options($app);
 
     my $includes  = $app->{includes};
@@ -91,12 +90,10 @@ sub load {
         return \@lsf_job_ids;
     };
 
-    if ($lsf_kill_on_exit) {
-        $TAP::Harness::ClusterMaster::DEFAULT_SLAVE_TEARDOWN_CALLBACK = sub {
-            my($self, $aggregate, $lsf_job_ids) = @_;
-            system("bkill $_") foreach @$lsf_job_ids;
-        };
-    }
+    $TAP::Harness::ClusterMaster::DEFAULT_SLAVE_TEARDOWN_CALLBACK = sub {
+        my($self, $aggregate, $lsf_job_ids) = @_;
+        system("bkill $_") foreach @$lsf_job_ids;
+    };
 
     return 1;
 }

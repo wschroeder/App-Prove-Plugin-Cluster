@@ -9,6 +9,14 @@ use IO::Select;
 use IPC::Open3;
 use Sys::Hostname;
 
+our $TEARDOWN_CALLBACK = sub {};
+our $TEARDOWN_IN_PROCESS_CALLBACK = sub {};
+
+END {
+    $TEARDOWN_CALLBACK->();
+    $TEARDOWN_IN_PROCESS_CALLBACK->();
+};
+
 sub parse_additional_options {
     my ($class, $app) = @_;
 
@@ -43,16 +51,11 @@ sub parse_additional_options {
     return ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process);
 }
 
-our $TEARDOWN_CALLBACK = sub {};
-our $TEARDOWN_IN_PROCESS_CALLBACK = sub {};
-
 sub load {
     my ($class, $p) = @_;
     my $app  = $p->{app_prove};
     my ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process) =
         $class->parse_additional_options($app);
-
-    local %SIG = %SIG;
 
     if ($lsf_teardown) {
         $TEARDOWN_CALLBACK = sub { system($lsf_teardown) };
@@ -63,12 +66,8 @@ sub load {
         };
     }
 
-    for my $signal (qw(INT KILL ABRT STOP __DIE__)) {
-        $SIG{$signal} = sub {
-            $TEARDOWN_CALLBACK->();
-            $TEARDOWN_IN_PROCESS_CALLBACK->();
-        };
-    }
+    my @sigs = (qw(INT KILL ABRT TERM HUP STOP));
+    local @SIG{@sigs} = map { sub { exit 1 } } @sigs;
 
     if ($lsf_startup) {
         if (system($lsf_startup) || $?) {
@@ -125,8 +124,6 @@ sub get_test {
 
     # Master prove is finished
     if (!defined($begin_line)) {
-        $TEARDOWN_CALLBACK->();
-        $TEARDOWN_IN_PROCESS_CALLBACK->();
         exit(0);
     }
 
