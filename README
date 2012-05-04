@@ -1,3 +1,9 @@
 Example of usage across LSF:
 
-  perl -I lib -S prove -PClusterLSF -r t/fake_t
+  prove -PClusterLSF --lsf-queue myqueue --jobs 10 -r t/
+
+
+This software is copyright (c) 2012 by The Genome Institute at Washington University.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
