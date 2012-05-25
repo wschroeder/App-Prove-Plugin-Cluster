@@ -78,8 +78,8 @@ sub load {
     if ($lsf_startup_in_process) {
         my $includes = $app->{includes};
         if ($includes) {
-            $ENV{PERL5LIB} .= ':' . join ':', map {($_ =~ m{^/}) ? $_ : $ENV{PWD} . "/$_"} @$includes;
-            push @INC, $class->includes($includes);
+            $ENV{PERL5LIB} = (join ':', map {($_ =~ m{^/}) ? $_ : $ENV{PWD} . "/$_"} @$includes) . ':' . $ENV{PERL5LIB};
+            @INC = ($class->includes($includes), @INC);
         }
         $class->eval_perl_script_in_process($lsf_startup_in_process);
     }
