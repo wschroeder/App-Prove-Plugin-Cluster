@@ -59,6 +59,7 @@ sub load {
         my $listen_port = $self->{'master_listen_port'};
         my $jobs = $self->jobs;
         my @lsf_job_ids;
+        my $current_dir = $ENV{PWD};
         for (1..$jobs) {
             my $bsub_stdout;
             open3(
@@ -66,13 +67,13 @@ sub load {
                 'bsub',               # command
                 ($lsf_queue     ? ('-q', $lsf_queue)     : ()),
                 ($lsf_resources ? ('-R', $lsf_resources) : ()),
+                ($lsf_teardown  ? ('-Ep', "cd $current_dir && $lsf_teardown") : ()),
                 'prove',
                 ($includes               ? (map {('-I', $_)} @$includes) : ()),
                 '-PClusterSlave',
                 '--master-host', hostname,
                 '--master-port', $listen_port,
                 ($lsf_startup             ? ('--lsf-startup',             $lsf_startup)  : ()),
-                ($lsf_teardown            ? ('--lsf-teardown',            $lsf_teardown) : ()),
                 ($lsf_startup_in_process  ? ('--lsf-startup-in-process',  $lsf_startup_in_process)  : ()),
                 ($lsf_teardown_in_process ? ('--lsf-teardown-in-process', $lsf_teardown_in_process) : ()),
                 ($lsf_test_in_process     ? '--lsf-test-in-process' : ()),

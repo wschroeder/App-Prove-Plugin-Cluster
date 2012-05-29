@@ -9,11 +9,9 @@ use IO::Select;
 use IPC::Open3;
 use Sys::Hostname;
 
-our $TEARDOWN_CALLBACK = sub {};
 our $TEARDOWN_IN_PROCESS_CALLBACK = sub {};
 
 END {
-    $TEARDOWN_CALLBACK->();
     $TEARDOWN_IN_PROCESS_CALLBACK->();
 };
 
@@ -24,13 +22,12 @@ sub parse_additional_options {
     local @ARGV = @args;
     Getopt::Long::Configure(qw(no_ignore_case bundling pass_through));
 
-    my ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process);
+    my ($master_host, $master_port, $credentials, $lsf_startup, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process);
     GetOptions(
         'master-host=s'             => \$master_host,
         'master-port=s'             => \$master_port,
         'credentials=s'             => \$credentials,
         'lsf-startup=s'             => \$lsf_startup,
-        'lsf-teardown=s'            => \$lsf_teardown,
         'lsf-startup-in-process=s'  => \$lsf_startup_in_process,
         'lsf-teardown-in-process=s' => \$lsf_teardown_in_process,
         'lsf-test-in-process'       => \$lsf_test_in_process,
@@ -48,18 +45,15 @@ sub parse_additional_options {
         die "Did not specify --credentials";
     }
 
-    return ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process);
+    return ($master_host, $master_port, $credentials, $lsf_startup, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process);
 }
 
 sub load {
     my ($class, $p) = @_;
     my $app  = $p->{app_prove};
-    my ($master_host, $master_port, $credentials, $lsf_startup, $lsf_teardown, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process) =
+    my ($master_host, $master_port, $credentials, $lsf_startup, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process) =
         $class->parse_additional_options($app);
 
-    if ($lsf_teardown) {
-        $TEARDOWN_CALLBACK = sub { system($lsf_teardown) };
-    }
     if ($lsf_teardown_in_process) {
         $TEARDOWN_IN_PROCESS_CALLBACK = sub {
             $class->eval_perl_script_in_process($lsf_teardown_in_process);
