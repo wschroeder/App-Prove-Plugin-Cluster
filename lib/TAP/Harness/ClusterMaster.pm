@@ -37,6 +37,11 @@ our $COOKIE                          = 'cookie';
 our $DEFAULT_SLAVE_STARTUP_CALLBACK  = sub {};
 our $DEFAULT_SLAVE_TEARDOWN_CALLBACK = sub {};
 
+sub log_status {
+    my ($self, $message) = @_;
+    print STDERR "[ClusterMaster $$ " . $self->{credentials} . "] $message\n";
+}
+
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
@@ -44,7 +49,7 @@ sub new {
     $self->{slave_startup_callback}  = $DEFAULT_SLAVE_STARTUP_CALLBACK;
     $self->{slave_teardown_callback} = $DEFAULT_SLAVE_TEARDOWN_CALLBACK;
     $self->{credentials}             = "$COOKIE - " . time;
-    print STDERR "SLAVE CREDENTIALS: '" . $self->{credentials} . "'\n";
+    $self->log_status('Booting');
     return $self;
 }
 
@@ -141,22 +146,26 @@ sub aggregate_tests {
                    });
 
     my @slaves;
+    $self->log_status('Waiting for slaves to phone home');
     while (!(@slaves = $self->detect_new_slaves($server))) {
         sleep(1);
     }
+
+    $self->log_status('Added ' . scalar(@slaves) . ' slaves');
     my $mux = $self->_construct($self->multiplexer_class, @slaves );
     my $time_of_last_update = time;
 
     RESULT: {
         if (time > $time_of_last_update + 60) {
             $time_of_last_update = time;
-            print STDERR "Waiting for response from slaves with credentials " . $self->{credentials} . "\n";
+            $self->log_status('Waiting for response from slaves');
         }
 
         # Add slave sockets to multiplexer
         if (@slaves < $jobs) {
             my @new_slaves = $self->detect_new_slaves($server);
             if (@new_slaves) {
+                $self->log_status('Added ' . scalar(@slaves) . ' late slaves');
                 $mux->add_sockets(@new_slaves);
                 push @slaves, @new_slaves;
             }
@@ -170,6 +179,7 @@ sub aggregate_tests {
             # If we hit a spinner stop filling and start running.
             last FILL if !defined $job || $job->is_spinner;
 
+            $self->log_status('Assigning a job to a slave');
             $job->{socket} = $mux->first_free_socket;
             my ( $parser, $session ) = $self->make_parser($job);
             $mux->add( $parser, [ $session, $job ] );
@@ -179,6 +189,7 @@ sub aggregate_tests {
         if (defined($stash)) {
             my ( $session, $job ) = @$stash;
             if (defined $result && ref $result->raw && $result->raw == TAP::Parser::Iterator::ClusterSlave::SLAVE_DISCONNECTED) {
+                $self->log_status('CRITICAL ERROR: Slave process disconnected prematurely!');
                 $result = undef;
                 @slaves = grep {$_ != $parser->{socket}} @slaves;
                 $parser->exit(255);
@@ -210,6 +221,7 @@ sub aggregate_tests {
                 $self->_do_with_autoflush_on( sub { $self->finish_parser( $parser, $session ) } );
                 $self->_after_test( $aggregate, $job, $parser );
                 $job->finish;
+                $self->log_status('A slave finished a job');
             }
             redo RESULT;
         }

@@ -62,8 +62,9 @@ sub load {
         my $current_dir = $ENV{PWD};
         for (1..$jobs) {
             my $bsub_stdout;
+            my $bsub_stderr;
             open3(
-                undef, $bsub_stdout, undef,  # std pipes
+                undef, $bsub_stdout, $bsub_stderr,  # std pipes
                 'bsub',               # command
                 ($lsf_queue     ? ('-q', $lsf_queue)     : ()),
                 ($lsf_resources ? ('-R', $lsf_resources) : ()),
@@ -83,9 +84,15 @@ sub load {
 
             my $output = <$bsub_stdout>;
             if ($output =~ m/^Job \<(\d+)\>/) {
+                print STDERR "[ClusterLSF $$ " . $self->{credentials} . "] Submitted LSF job $1\n";
                 push @lsf_job_ids, $1;
             } else {
-                warn "Submitting LSF failed: $output";
+                warn "[ClusterLSF $$ " . $self->{credentials} . "] Submitting LSF failed: $output";
+            }
+
+            my $error = ($bsub_stderr && <$bsub_stderr>) || undef;
+            if ($error) {
+                warn "[ClusterLSF $$ " . $self->{credentials} . "] Error when submitting LSF job: $error";
             }
         }
         return \@lsf_job_ids;

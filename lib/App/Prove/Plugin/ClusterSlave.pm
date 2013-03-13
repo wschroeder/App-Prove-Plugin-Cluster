@@ -15,6 +15,15 @@ END {
     $TEARDOWN_IN_PROCESS_CALLBACK->();
 };
 
+sub log_die($) {
+    my $message = shift;
+    if (open(CLUSTERLOG, ">ClusterSlave-" . $ENV{HOST} . "-$$.out")) {
+        print CLUSTERLOG time . ": $message\n";
+        close(CLUSTERLOG);
+    }
+    die $message;
+}
+
 sub parse_additional_options {
     my ($class, $app) = @_;
 
@@ -36,13 +45,13 @@ sub parse_additional_options {
     $app->{argv} = [@ARGV];
 
     if (!defined($master_host)) {
-        die "Did not specify --master-host";
+        log_die "Did not specify --master-host";
     }
     if (!defined($master_port)) {
-        die "Did not specify --master-port";
+        log_die "Did not specify --master-port";
     }
     if (!defined($credentials)) {
-        die "Did not specify --credentials";
+        log_die "Did not specify --credentials";
     }
 
     return ($master_host, $master_port, $credentials, $lsf_startup, $lsf_startup_in_process, $lsf_teardown_in_process, $lsf_test_in_process);
@@ -65,7 +74,7 @@ sub load {
 
     if ($lsf_startup) {
         if (system($lsf_startup) || $?) {
-            die "Startup failed";
+            log_die "Startup failed";
         }
     }
 
@@ -104,7 +113,7 @@ sub eval_perl_script_in_process {
         chdir($cwd);
 
         if ($@) {
-            die $@;
+            log_die $@;
         }
     }
 }
@@ -122,7 +131,7 @@ sub get_test {
     }
 
     if ($begin_line ne "BEGIN\n") {
-        die "Master prove sent unknown protocol message: $begin_line";
+        log_die "Master prove sent unknown protocol message: $begin_line";
     }
 
     my @lines;
@@ -154,7 +163,7 @@ sub run_client {
     }
 
     if (!$socket) {
-        die "Could not connect to master prove process";
+        log_die "Could not connect to master prove process";
     }
 
     while (1) {
